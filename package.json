@@ -1,0 +1,22 @@
+{
+  "name": "health-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/speech": "^6.0.2",
+    "@picovoice/cheetah-node": "^1.1.1",
+    "@picovoice/pvrecorder-node": "^1.2.1",
+    "express": "^4.18.2",
+    "mqtt": "^5.1.2",
+    "node": "^21.0.0",
+    "socket.io": "^4.7.2"
+  }
+}

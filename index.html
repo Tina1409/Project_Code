@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Health Monitoring Control</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+  <style>
+    body,
+    h1,
+    h2,
+    p {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+
+    h1 {
+      background-color: #3498db;
+      color: #fff;
+      padding: 20px;
+    }
+
+    button {
+      background-color: #3498db;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .article {
+      background-color: #fff;
+      margin: 10px;
+      padding: 20px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-container {
+      margin: 20px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    p {
+      color: #666;
+      font-weight: bold;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+    }
+
+    span {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    #ecgChart {
+      border-color: red;
+    }
+
+    #heartChart {
+      border-color: blue;
+    }
+
+    #spo2Chart {
+      border-color: green;
+    }
+
+    @media screen and (max-width: 768px) {
+      .chart-container {
+        padding: 10px;
+      }
+
+      canvas {
+        width: 100%;
+        height: auto;
+        border: 1px solid #ccc;
+      }
+    }
+
+    .active-button {
+      background-color: #1b6ca8 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Health Monitoring Control</h1>
+  <button id="startButton">Start Listening</button>
+  <button id="stopButton">Stop Listening</button>
+
+  <div id="healthData">
+    <section>
+      <article>
+        <h2>ECG Value (in Milli Volt)</h2>
+        <p><span id="ecgValue">Waiting for data...</span></p>
+        <figure class="chart-container">
+          <canvas id="ecgChart" width="800" height="400"></canvas>
+        </figure>
+      </article>
+    </section>
+
+    <section>
+      <article>
+        <h2>Heart Rate (per Minute)</h2>
+        <p><span id="heartRate">Waiting for data...</span></p>
+        <figure class="chart-container">
+          <canvas id="heartChart" width="800" height="400"></canvas>
+        </figure>
+      </article>
+    </section>
+
+    <section>
+      <article>
+        <h2>SPO2 (Oxygen in Percentage)</h2>
+        <p><span id="spo2">Waiting for data...</span></p>
+        <figure class="chart-container">
+          <canvas id="spo2Chart" width="800" height="400"></canvas>
+        </figure>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const ecgCtx = document.getElementById('ecgChart').getContext('2d');
+    const heartCtx = document.getElementById('heartChart').getContext('2d');
+    const spo2Ctx = document.getElementById('spo2Chart').getContext('2d');
+
+    const createChart = (ctx, label, borderColor, max) => {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: label,
+            borderColor: borderColor,
+            borderWidth: 1,
+            fill: false,
+            data: [],
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+            },
+            y: {
+              min: 0,
+              max: max,
+            },
+          },
+        },
+      });
+    };
+
+    const ecgChart = createChart(ecgCtx, 'ECG Data', 'red', 1000);
+    const heartChart = createChart(heartCtx, 'Heart BP', 'blue', 100);
+    const spo2Chart = createChart(spo2Ctx, 'Oxygen Level', 'green', 100);
+
+    const socket = io();
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+
+    startButton.addEventListener('click', () => {
+      socket.emit('start_sensing');
+      startButton.classList.add('active-button');
+      stopButton.classList.remove('active-button');
+    });
+
+    stopButton.addEventListener('click', () => {
+      socket.emit('stop_sensing');
+      startButton.classList.remove('active-button');
+      stopButton.classList.add('active-button');
+    });
+
+    function updateCharts(data) {
+      const time = new Date().getTime() % 10000;
+
+      document.getElementById('ecgValue').textContent = data.ecg_value;
+      ecgChart.data.labels.push(time);
+      ecgChart.data.datasets[0].data.push(data.ecg_value);
+      if (ecgChart.data.labels.length > 20) {
+        ecgChart.data.labels.shift();
+        ecgChart.data.datasets[0].data.shift();
+      }
+      ecgChart.update();
+
+      document.getElementById('heartRate').textContent = data.heart_rate;
+      heartChart.data.labels.push(time);
+      heartChart.data.datasets[0].data.push(data.heart_rate);
+      if (heartChart.data.labels.length > 20) {
+        heartChart.data.labels.shift();
+        heartChart.data.datasets[0].data.shift();
+      }
+      heartChart.update();
+
+      document.getElementById('spo2').textContent = data.spo2;
+      spo2Chart.data.labels.push(time);
+      spo2Chart.data.datasets[0].data.push(data.spo2);
+      if (spo2Chart.data.labels.length > 20) {
+        spo2Chart.data.labels.shift();
+        spo2Chart.data.datasets[0].data.shift();
+      }
+      spo2Chart.update();
+    }
+
+    socket.on('sensorData', (data) => {
+      updateCharts(data);
+    });
+
+    startButton.addEventListener('click', () => {
+      socket.emit('start_sensing');
+    });
+
+    stopButton.addEventListener('click', () => {
+      socket.emit('stop_sensing');
+    });
+  </script>
+</body>
+
+</html>

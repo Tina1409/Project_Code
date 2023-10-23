@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Sensor Data Visualization</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+</head>
+
+<body>
+  <h1>Sensor Data Visualization</h1>
+
+  <h2>ECG Data(in miliVolt):</h2>
+  <p id="ecgData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="ecgChart" width="800" height="400"></canvas>
+  </div>
+
+  <h2>Oxygen Percentage:</h2>
+  <p id="oxygenData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="oxygenChart" width="800" height="400"></canvas>
+  </div>
+
+  <h2>Body Temperature:</h2>
+  <p id="temperatureData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="temperatureChart" width="800" height="400"></canvas>
+  </div>
+
+  <script>
+    const ecgCtx = document.getElementById('ecgChart').getContext('2d');
+    const oxygenCtx = document.getElementById('oxygenChart').getContext('2d');
+    const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+
+    const createChart = (ctx, label, borderColor, max) => {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: label,
+            borderColor: borderColor,
+            borderWidth: 1,
+            fill: false,
+            data: [],
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+            },
+            y: {
+              min: 0,
+              max: max,
+            },
+          },
+        },
+      });
+    };
+
+    const ecgChart = createChart(ecgCtx, 'ECG Data', 'red', 2300);
+    const oxygenChart = createChart(oxygenCtx, 'Oxygen Percentage', 'blue', 100);
+    const temperatureChart = createChart(temperatureCtx, 'Body Temperature', 'green', 100);
+
+    function updateCharts(data) {
+      const time = new Date().getTime() % 10000;
+
+      document.getElementById('ecgData').textContent = `ECG Data: ${data.ecg}`;
+      ecgChart.data.labels.push(time);
+      ecgChart.data.datasets[0].data.push(data.ecg);
+      if (ecgChart.data.labels.length > 20) {
+        ecgChart.data.labels.shift();
+        ecgChart.data.datasets[0].data.shift();
+      }
+      ecgChart.update();
+
+      document.getElementById('oxygenData').textContent = `Oxygen Percentage: ${data.oxygen}%`;
+      oxygenChart.data.labels.push(time);
+      oxygenChart.data.datasets[0].data.push(data.oxygen);
+      if (oxygenChart.data.labels.length > 20) {
+        oxygenChart.data.labels shift();
+        oxygenChart.data.datasets[0].data.shift();
+      }
+      oxygenChart.update();
+
+      document.getElementById('temperatureData').textContent = `Body Temperature: ${data.temperature}°C`;
+      temperatureChart.data.labels.push(time);
+      temperatureChart.data.datasets[0].data.push(data.temperature);
+      if (temperatureChart.data.labels.length > 20) {
+        temperatureChart.data.labels.shift();
+        temperatureChart.data.datasets[0].data.shift();
+      }
+      temperatureChart.update();
+    }
+
+    const socket = io('YOUR_SOCKET_SERVER_URL');
+
+    socket.on('sensorData', (data) => {
+      updateCharts(data);
+    });
+  </script>
+</body>
+
+</html>

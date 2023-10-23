@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Sensor Data Visualization</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+  <style>
+    
+    .chart-container {
+      max-width: 500px;
+     
+      margin: 0 auto;
+     
+    }
+
+    
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+
+   
+    p {
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    
+    canvas {
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Sensor Data Visualization</h1>
+
+  <h2>ECG Data:</h2>
+  <p id="ecgData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="ecgChart" width="800" height="400"></canvas>
+  </div>
+
+  <h2>Oxygen Percentage:</h2>
+  <p id="oxygenData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="oxygenChart" width="800" height="400"></canvas>
+  </div>
+
+  <h2>Body Temperature:</h2>
+  <p id="temperatureData">Waiting for data...</p>
+  <div class="chart-container">
+    <canvas id="temperatureChart" width="800" height="400"></canvas>
+  </div>
+
+  <script>
+    // Initialize the ECG, Oxygen, and Temperature charts
+    const ecgCtx = document.getElementById('ecgChart').getContext('2d');
+    const oxygenCtx = document.getElementById('oxygenChart').getContext('2d');
+    const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+
+    const createChart = (ctx, label, borderColor, max) => {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: label,
+            borderColor: borderColor,
+            borderWidth: 1,
+            fill: false,
+            data: [],
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+            },
+            y: {
+              min: 0,
+              max: max, 
+            },
+          },
+        },
+      });
+    };
+
+    const ecgChart = createChart(ecgCtx, 'ECG Data', 'red', 2300); 
+    const oxygenChart = createChart(oxygenCtx, 'Oxygen Percentage', 'blue', 100); 
+    const temperatureChart = createChart(temperatureCtx, 'Body Temperature', 'green', 100);
+
+  
+    function generateRandomData(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    
+    setInterval(() => {
+      const time = new Date().getTime() % 10000;
+
+     
+      const ecgData = generateRandomData(0, 1000);
+      document.getElementById('ecgData').textContent = `Ecg Data: ${ecgData}`;
+      ecgChart.data.labels.push(time);
+      ecgChart.data.datasets[0].data.push(ecgData);
+      if (ecgChart.data.labels.length > 20) {
+        ecgChart.data.labels.shift();
+        ecgChart.data.datasets[0].data.shift();
+      }
+      ecgChart.update();
+
+      
+      const oxygenData = generateRandomData(0, 100);
+      document.getElementById('oxygenData').textContent = `Oxygen Percentage: ${oxygenData}%`;
+      oxygenChart.data.labels.push(time);
+      oxygenChart.data.datasets[0].data.push(oxygenData);
+      if (oxygenChart.data.labels.length > 20) {
+        oxygenChart.data.labels.shift();
+        oxygenChart.data.datasets[0].data.shift();
+      }
+      oxygenChart.update();
+
+      
+      const temperatureData = generateRandomData(0, 100);
+      document.getElementById('temperatureData').textContent = `Body Temperature: ${temperatureData}°C`;
+      temperatureChart.data.labels.push(time);
+      temperatureChart.data.datasets[0].data.push(temperatureData);
+      if (temperatureChart.data.labels.length > 20) {
+        temperatureChart.data.labels.shift();
+        temperatureChart.data.datasets[0].data.shift();
+      }
+      temperatureChart.update();
+    }, 250); 
+
+  </script>
+</body>
+
+</html>
