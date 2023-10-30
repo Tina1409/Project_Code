@@ -81,7 +81,7 @@ void loop()
   if (pox.getIR() && pox.getRed())
   {
     char payload[100];
-    int ecgValue = readECG(); // Replace with code to read ECG data
+    int ecgValue = readECG(); 
 
     int heartRate = pox.getHeartRate();
     int spo2 = pox.getSpO2();
@@ -110,8 +110,8 @@ void loop()
 
 int readECG()
 {
-  // Replace this with code to read ECG data from your specific ECG sensor
-  int ecgValue = analogRead(A0); // Example: Reading analog data from pin A0
+ 
+  int ecgValue = analogRead(A0); 
   return ecgValue;
 }
 
